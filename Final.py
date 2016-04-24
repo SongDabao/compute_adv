@@ -35,8 +35,8 @@ def getfature(dir):
            # fature_dict[className]=fatureList   # 字典格式 { 'internet' :[ [..] [..] [..] ] }
 
 def handleData(data):
-    #seg=jieba.analyse.extract_tags(data,20) #是否采取特征词的方式？？？？
-    seg=jieba.cut(data)
+    seg=jieba.analyse.extract_tags(data,50) #是否采取特征词的方式？？？？
+    #seg=jieba.cut(data)
     return list(seg)
 
 
@@ -62,15 +62,17 @@ def scan(target,fature_dict):
                 N+=1
                 if valuse in target:
                     count_dict[valuse][k]+=1   ##不知道这么写行不行，反正是这么个意思
+    #print(N_class,V)
     return (count_dict,N,V,N_class)
 #--------------------------------------贝叶斯分类算法实现-----------------------------------------------#
 
 def Byes(target,classname):
-    possible=0
+    possible=1
     count_dict=scan(target,fature_dict)
     for subword in target:
-        possible*=get_pos(subword,classname)       ##----->是加还是乘？？？？？？？？？？、
-    return math.log(possible)
+        possible+=get_pos(subword,classname)       ##----->是加还是乘？？？？？？？？？？、
+        #print("possible of ",subword,"is",possible)
+    return possible
 
 def get_pos(word,classname):
 
@@ -80,8 +82,9 @@ def get_pos(word,classname):
     for class_i in count_dict[word].keys():
         sumcount+=count_dict[word][class_i]
     Pword=sumcount/N
-    print(classname,"------->",Pword_class,Pclass,Pword)
-    return (Pword_class*Pclass)/Pword
+    #print(classname,"------->",Pword_class,Pclass,Pword)
+    #return (Pword_class*Pclass)/Pword
+    return math.log(Pword_class)
 
 
 def get_target_fature(filepath):
@@ -91,27 +94,70 @@ def get_target_fature(filepath):
                 data = file.read()
             except:
                 print("--------there is an exception")
-    print(data)
     target_fature=handleData(data)
+    print(target_fature)
     return target_fature
+    
 
 
 if __name__== '__main__':
+    zhengqueshu=0
+    class_target_name="caijing"
+    zhonggongshu=0
+    
     source="H:\计算广告学\SogouC.reduced\Reduced"
-    targetpath="H:\\计算广告学\\SogouC.reduced\\44.txt"
+    fature_dict=readData(source)
+    targetpath="H:\计算广告学\SogouC.reduced\\test_dir"
+    walk=os.walk(targetpath)
+    test_root=walk.__next__()
+    for test_name in test_root[2]:
+        fulltestname=test_root[0]+"\\"+test_name
+        print("test_name is==>",fulltestname )
+        try:
+            target=get_target_fature(fulltestname)
+        except:
+            print("this file has a problem")
+            continue
+        (count_dict,N,V,N_class)= scan(target,fature_dict)
+        largest=-100000
+        result=''
+        for a_class in fature_dict.keys():
+            tmp=Byes(target,a_class)
+            #print("byes of ",a_class,"is",tmp)
+            if largest<tmp:
+                largest=tmp
+                result=str(a_class)
+        if result == class_target_name:
+            zhengqueshu+=1
+        zhonggongshu+=1
+        print("结果是----------------->"+result,largest)
+    print("正确率是：",(zhengqueshu/zhonggongshu))
+        
+'''
+文化 --0.91
+财经 -- 0.32
+互联网 --0.78
+健康 --0.67
+教育 -- 0.97
+军事 -- 0.89
+旅游 -- 0.63
+体育 --0.84
+招聘--0.3
+
+    source="H:\计算广告学\SogouC.reduced\Reduced"
     fature_dict=readData(source)
     target=get_target_fature(targetpath)
     
     (count_dict,N,V,N_class)= scan(target,fature_dict)
-    largest=0.00
+    largest=-100000
     result=''
     for a_class in fature_dict.keys():
         tmp=Byes(target,a_class)
-        if larget<tmp:
-            larget=tmp
-            result=a_class
+        print("byes of ",a_class,"is",tmp)
+        if largest<tmp:
+            largest=tmp
+            result=str(a_class)
 
     print("最激动而内心的时刻到了...")
-    print("结果是----------------->"+result)
-
-
+    print("结果是----------------->"+result,largest)
+'''
