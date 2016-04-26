@@ -27,18 +27,34 @@ def getfature(dir):
             try:
                 data = file.read()
             except:
-                print("there is an exception")
+                #print("there is an exception")
                 continue
-            fature=handleData(data)
+            fature=handletargetData(data)   ##-------------------------------事实证明，用handletargetData,比用handleData的正确率要高
             fatureList.append(fature)
     return fatureList
            # fature_dict[className]=fatureList   # 字典格式 { 'internet' :[ [..] [..] [..] ] }
-
-def handleData(data):
+           
+#测试集文件，取前30个值
+def handletargetData(data):
     seg=jieba.analyse.extract_tags(data,50) #是否采取特征词的方式？？？？
-    #seg=jieba.cut(data)
+    #应该加上处理步骤，因为得到的特征会有‘&nbsp’这种东西，以及数字，因为好像这个函数会提取数字（整数和浮点数）
+    seg=list(seg)
+    new_seg=[]
+    for seg_i in seg:
+        new_seg.append(seg_i)
+    for seg_i in seg:
+        if  seg_i=='nbsp':
+            new_seg.remove(seg_i)
+        try:
+            float(seg_i)
+            new_seg.remove(seg_i)
+        except:
+            pass
+    return new_seg
+#训练集文件，取全部值
+def handleData(data):   
+    seg=jieba.cut(data)
     return list(seg)
-
 
 def scan(target,fature_dict):
     count_dict={}
@@ -94,15 +110,15 @@ def get_target_fature(filepath):
                 data = file.read()
             except:
                 print("--------there is an exception")
-    target_fature=handleData(data)
-    print(target_fature)
+    target_fature=handletargetData(data)
+    #print(target_fature)
     return target_fature
     
 
 
 if __name__== '__main__':
     zhengqueshu=0
-    class_target_name="caijing"
+    class_target_name="zhaopin"
     zhonggongshu=0
     
     source="H:\计算广告学\SogouC.reduced\Reduced"
@@ -132,17 +148,31 @@ if __name__== '__main__':
         zhonggongshu+=1
         print("结果是----------------->"+result,largest)
     print("正确率是：",(zhengqueshu/zhonggongshu))
-        
+
+
+
+
+#将fature_dict 写入fature_dict.txt
+f=open("./fature_dict.txt",'wb')
+pickle.dump(fature_dict,f)
+f.close()
+#把文件重新读回来
+f = open('dump.txt', 'rb')
+d = pickle.load(f)
+f.close()
+#
 '''
 文化 --0.91
 财经 -- 0.32
 互联网 --0.78
 健康 --0.67
-教育 -- 0.97
+教育 -- 0.97     --0.75
 军事 -- 0.89
 旅游 -- 0.63
-体育 --0.84
-招聘--0.3
+体育 --0.84   --0.9
+招聘--0.3      --0.52
+
+当吧所有文件都加上之后，招聘的正确率由0.52变成了1.0，也就是全都对
 
     source="H:\计算广告学\SogouC.reduced\Reduced"
     fature_dict=readData(source)
